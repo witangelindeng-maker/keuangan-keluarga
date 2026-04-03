@@ -31,6 +31,11 @@ var rincianData = {
   "Lain-lain": ["Bebas"]
 };
 
+// FORMAT ANGKA 200.000
+function formatAngka(angka){
+  return angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
 function updateRincian(){
   var kategori = document.getElementById("kategori").value;
   var rincian = document.getElementById("rincian");
@@ -90,7 +95,7 @@ function total(){
     var kategori = t.rows[i].cells[1].innerHTML;
     var jumlah = parseFloat(t.rows[i].cells[3].innerHTML);
 
-    if(jenis=="Pemasukan"){
+    if(jenis=="Pemasukan" || jenis=="Gaji Bulanan"){
       totalMasuk += jumlah;
     } else {
       totalKeluar += jumlah;
@@ -103,7 +108,8 @@ function total(){
   }
 
   document.getElementById("total").innerHTML =
-    "Pemasukan: " + totalMasuk + "<br>Pengeluaran: " + totalKeluar;
+    "Pemasukan: " + formatAngka(totalMasuk) +
+    "<br>Pengeluaran: " + formatAngka(totalKeluar);
 
   tampilGrafikTotal(totalMasuk, totalKeluar);
   tampilGrafikKategori(kategoriKeluar);
@@ -111,19 +117,21 @@ function total(){
   cekPeringatan(totalMasuk, totalKeluar);
 }
 
+// PERINGATAN SALDO
 function cekPeringatan(masuk, keluar){
   var saldo = masuk - keluar;
   var el = document.getElementById("peringatan");
 
   if(saldo < 0){
     el.style.color = "red";
-    el.innerHTML = "⚠️ Anggaran minus Rp " + Math.abs(saldo);
+    el.innerHTML = "⚠️ Anggaran minus Rp " + formatAngka(Math.abs(saldo));
   } else {
     el.style.color = "green";
-    el.innerHTML = "✅ Sisa saldo: Rp " + saldo;
+    el.innerHTML = "✅ Sisa saldo: Rp " + formatAngka(saldo);
   }
 }
 
+// GRAFIK TOTAL
 function tampilGrafikTotal(masuk, keluar){
   var ctx = document.getElementById("grafik1").getContext("2d");
 
@@ -145,6 +153,7 @@ function tampilGrafikTotal(masuk, keluar){
   });
 }
 
+// GRAFIK KATEGORI
 function tampilGrafikKategori(dataKategori){
   var ctx = document.getElementById("grafik2").getContext("2d");
 
@@ -169,6 +178,7 @@ function tampilGrafikKategori(dataKategori){
   });
 }
 
+// SIMPAN DATA
 function simpan(){
   var t = document.getElementById("tabel");
   var data=[];
@@ -184,6 +194,7 @@ function simpan(){
   localStorage.setItem("keuangan", JSON.stringify(data));
 }
 
+// LOAD DATA
 function load(){
   var data = JSON.parse(localStorage.getItem("keuangan")||"[]");
   var t = document.getElementById("tabel");
@@ -209,6 +220,7 @@ function load(){
 
 <select id="jenis">
 <option>Pemasukan</option>
+<option>Gaji Bulanan</option>
 <option>Pengeluaran</option>
 </select>
 
@@ -240,7 +252,6 @@ function load(){
 <div class="box">
 <h3>Total</h3>
 <div id="total"></div>
-
 <div id="peringatan" style="margin-top:10px; font-weight:bold;"></div>
 </div>
 
