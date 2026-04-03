@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aplikasi Keuangan</title>
+<title>Keuangan Keluarga</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -14,186 +14,218 @@ button {background:#4CAF50; color:white; border:none;}
 table {width:100%; border-collapse:collapse; font-size:12px;}
 th,td {border:1px solid #ccc; padding:5px; text-align:center;}
 th {background:#ddd;}
-canvas {max-height:200px;}
 </style>
 
 <script>
 
-var data = JSON.parse(localStorage.getItem("keuangan")||"[]");
 var chart1, chart2;
 
-// format 1000000 → 1.000.000
-function formatAngka(x){
-  if(!x) return "";
-  return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g,".");
-}
+var rincianData = {
+  "Hiburan": ["Makan", "Nonton", "Jalan"],
+  "Upacara": ["Banten", "Dana Punia", "Persembahyangan"],
+  "Bekal Anak": ["Jajan", "Alat Tulis", "Transport"],
+  "Lain-lain": ["Bebas"]
+};
 
-// ubah "1.000.000" → 1000000
-function parseAngka(x){
-  if(!x) return 0;
-  return parseFloat(x.toString().replace(/\./g,"")) || 0;
-}
+function updateRincian(){
+  var kategori = document.getElementById("kategori").value;
+  var rincian = document.getElementById("rincian");
 
-// AUTO FORMAT INPUT
-document.addEventListener("DOMContentLoaded", function(){
-  var input = document.getElementById("jumlah");
+  rincian.innerHTML = "";
 
-  input.addEventListener("input", function(){
-    var angka = this.value.replace(/\D/g,"");
-    this.value = formatAngka(angka);
+  rincianData[kategori].forEach(function(item){
+    var opt = document.createElement("option");
+    opt.value = item;
+    opt.text = item;
+    rincian.appendChild(opt);
   });
-});
+
+  if(kategori === "Lain-lain"){
+    document.getElementById("keterangan").focus();
+  }
+}
 
 function tambah(){
-  var tgl = document.getElementById("tanggal").value;
   var jenis = document.getElementById("jenis").value;
   var kategori = document.getElementById("kategori").value;
   var rincian = document.getElementById("rincian").value;
-  var jumlah = parseAngka(document.getElementById("jumlah").value);
-  var ket = document.getElementById("keterangan").value;
+  var jumlah = document.getElementById("jumlah").value;
+  var keterangan = document.getElementById("keterangan").value;
 
-  if(!tgl || !jumlah){ alert("Isi lengkap!"); return;}
+  if(jumlah==""){ alert("Isi jumlah!"); return;}
 
-  data.push([tgl,jenis,kategori,rincian,jumlah,ket]);
-  localStorage.setItem("keuangan",JSON.stringify(data));
+  var t = document.getElementById("tabel");
+  var r = t.insertRow();
 
-  load();
+  r.insertCell(0).innerHTML = jenis;
+  r.insertCell(1).innerHTML = kategori;
+  r.insertCell(2).innerHTML = rincian;
+  r.insertCell(3).innerHTML = jumlah;
+  r.insertCell(4).innerHTML = keterangan;
+  r.insertCell(5).innerHTML = "<button onclick='hapus(this)'>X</button>";
+
+  total();
+  simpan();
+
+  document.getElementById("jumlah").value = "";
+  document.getElementById("keterangan").value = "";
 }
 
-function hapus(i){
-  data.splice(i,1);
-  localStorage.setItem("keuangan",JSON.stringify(data));
-  load();
+function hapus(btn){
+  var r = btn.parentNode.parentNode;
+  r.remove();
+  total();
+  simpan();
 }
 
-function filterBulan(arr){
-  var b = document.getElementById("bulan").value;
-  if(!b) return arr;
+function total(){
+  var t = document.getElementById("tabel");
 
-  return arr.filter(x => x[0].slice(0,7)===b);
+  var totalMasuk = 0;
+  var totalKeluar = 0;
+  var kategoriKeluar = {};
+
+  for(var i=1;i<t.rows.length;i++){
+    var jenis = t.rows[i].cells[0].innerHTML;
+    var kategori = t.rows[i].cells[1].innerHTML;
+    var jumlah = parseFloat(t.rows[i].cells[3].innerHTML);
+
+    if(jenis=="Pemasukan"){
+      totalMasuk += jumlah;
+    } else {
+      totalKeluar += jumlah;
+
+      if(!kategoriKeluar[kategori]){
+        kategoriKeluar[kategori] = 0;
+      }
+      kategoriKeluar[kategori] += jumlah;
+    }
+  }
+
+  // tampil total teks
+  document.getElementById("total").innerHTML =
+    "Pemasukan: " + totalMasuk + "<br>Pengeluaran: " + totalKeluar;
+
+  // grafik total
+  tampilGrafikTotal(totalMasuk, totalKeluar);
+
+  // grafik kategori
+  tampilGrafikKategori(kategoriKeluar);
+}
+
+function tampilGrafikTotal(masuk, keluar){
+  var ctx = document.getElementById("grafik1").getContext("2d");
+
+  if(chart1){ chart1.destroy(); }
+
+  chart1 = new Chart(ctx, {
+    type: "pie",
+    data: {
+      labels: ["Pemasukan", "Pengeluaran"],
+      datasets: [{ data: [masuk, keluar] }]
+    }
+  });
+}
+
+function tampilGrafikKategori(dataKategori){
+  var ctx = document.getElementById("grafik2").getContext("2d");
+
+  if(chart2){ chart2.destroy(); }
+
+  var labels = Object.keys(dataKategori);
+  var data = Object.values(dataKategori);
+
+  chart2 = new Chart(ctx, {
+    type: "pie",
+    data: {
+      labels: labels,
+      datasets: [{ data: data }]
+    }
+  });
+}
+
+function simpan(){
+  var t = document.getElementById("tabel");
+  var data=[];
+
+  for(var i=1;i<t.rows.length;i++){
+    var row=[];
+    for(var j=0;j<5;j++){
+      row.push(t.rows[i].cells[j].innerHTML);
+    }
+    data.push(row);
+  }
+
+  localStorage.setItem("keuangan", JSON.stringify(data));
 }
 
 function load(){
+  var data = JSON.parse(localStorage.getItem("keuangan")||"[]");
   var t = document.getElementById("tabel");
-  t.innerHTML = `
-  <tr>
-  <th>Tanggal</th><th>Jenis</th><th>Kategori</th><th>Rincian</th><th>Jumlah</th><th>Keterangan</th><th>Aksi</th>
-  </tr>`;
 
-  var d = filterBulan(data);
-
-  var masuk=0, keluar=0;
-  var kategori={};
-
-  d.forEach(function(x,i){
+  data.forEach(function(item){
     var r = t.insertRow();
-    r.insertCell(0).innerHTML=x[0];
-    r.insertCell(1).innerHTML=x[1];
-    r.insertCell(2).innerHTML=x[2];
-    r.insertCell(3).innerHTML=x[3];
-    r.insertCell(4).innerHTML=formatAngka(x[4]);
-    r.insertCell(5).innerHTML=x[5];
-    r.insertCell(6).innerHTML="<button onclick='hapus("+i+")'>X</button>";
-
-    // 🔥 FIX UTAMA ADA DI SINI
-    var nilai = parseAngka(x[4]);
-
-    if(x[1]=="Pemasukan"){
-      masuk += nilai;
-    } else {
-      keluar += nilai;
-      if(!kategori[x[2]]) kategori[x[2]]=0;
-      kategori[x[2]] += nilai;
+    for(var i=0;i<5;i++){
+      r.insertCell(i).innerHTML=item[i];
     }
+    r.insertCell(5).innerHTML="<button onclick='hapus(this)'>X</button>";
   });
 
-  document.getElementById("total").innerHTML =
-  "Pemasukan: "+formatAngka(masuk)+"<br>Pengeluaran: "+formatAngka(keluar);
-
-  var sisa = masuk - keluar;
-
-  document.getElementById("peringatan").innerHTML =
-  (sisa < 0) ?
-  "⚠️ Anggaran Minus Rp "+formatAngka(Math.abs(sisa)) :
-  "✅ Sisa Rp "+formatAngka(sisa);
-
-  tampilChart(masuk, keluar, kategori);
-}
-
-function tampilChart(masuk, keluar, kategori){
-
-  if(chart1) chart1.destroy();
-  if(chart2) chart2.destroy();
-
-  chart1 = new Chart(document.getElementById("chart1"),{
-    type:"bar",
-    data:{
-      labels:["Masuk","Keluar"],
-      datasets:[{data:[masuk, keluar]}]
-    },
-    options:{responsive:true, maintainAspectRatio:false}
-  });
-
-  chart2 = new Chart(document.getElementById("chart2"),{
-    type:"bar",
-    data:{
-      labels:Object.keys(kategori),
-      datasets:[{data:Object.values(kategori)}]
-    },
-    options:{responsive:true, maintainAspectRatio:false}
-  });
+  total();
 }
 
 </script>
 </head>
 
-<body onload="load()">
+<body onload="updateRincian(); load();">
 
 <div class="box">
 <h3>Input</h3>
-
-<input type="date" id="tanggal">
 
 <select id="jenis">
 <option>Pemasukan</option>
 <option>Pengeluaran</option>
 </select>
 
-<select id="kategori">
-<option>Lain-lain</option>
+<select id="kategori" onchange="updateRincian()">
 <option>Hiburan</option>
-<option>Belanja</option>
-<option>Makan</option>
+<option>Upacara</option>
+<option>Bekal Anak</option>
+<option>Lain-lain</option>
 </select>
 
+<select id="rincian"></select>
 
 <input type="text" id="keterangan" placeholder="Keterangan">
-<input type="text" id="jumlah" placeholder="Jumlah (contoh 2500000)">
+<input type="number" id="jumlah" placeholder="Jumlah">
 
 <button onclick="tambah()">Tambah</button>
 </div>
 
 <div class="box">
-<h3>Filter Bulan</h3>
-<input type="month" id="bulan">
-<button onclick="load()">Filter</button>
-</div>
+<h3>Transaksi</h3>
 
-<div class="box">
-<h3>Data</h3>
-<table id="tabel"></table>
+<table id="tabel">
+<tr>
+<th>Jenis</th><th>Kategori</th><th>Rincian</th><th>Jumlah</th><th>Keterangan</th><th>X</th>
+</tr>
+</table>
 </div>
 
 <div class="box">
 <h3>Total</h3>
 <div id="total"></div>
-<div id="peringatan" style="font-weight:bold; margin-top:10px;"></div>
+</div>
+
+<!-- GRAFIK DI PALING BAWAH -->
+<div class="box">
+<h3>Grafik Pemasukan vs Pengeluaran</h3>
+<canvas id="grafik1"></canvas>
 </div>
 
 <div class="box">
-<h3>Grafik</h3>
-<canvas id="chart1"></canvas>
-<canvas id="chart2"></canvas>
+<h3>Grafik Pengeluaran per Kategori</h3>
+<canvas id="grafik2"></canvas>
 </div>
 
 </body>
