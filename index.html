@@ -1,5 +1,20 @@
-<!DOCTYPE html> <html> <head> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Keuangan Keluarga</title>
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keuangan Keluarga</title>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body {font-family: Arial; background:#eef2f7; padding:10px;}
+.box {background:white; padding:15px; border-radius:10px; margin-bottom:15px;}
+input, select, button {width:100%; padding:10px; margin-top:10px;}
+button {background:#4CAF50; color:white; border:none;}
+table {width:100%; border-collapse:collapse; font-size:12px;}
+th,td {border:1px solid #ccc; padding:5px; text-align:center;}
+th {background:#ddd;}
+</style>
 
 <script>
 
@@ -12,12 +27,10 @@ var rincianData = {
   "Lain-lain": ["Bebas"]
 };
 
-// format rupiah
 function formatRupiah(angka){
   return angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
-// update rincian
 function updateRincian(){
   var kategori = document.getElementById("kategori").value;
   var rincian = document.getElementById("rincian");
@@ -32,7 +45,6 @@ function updateRincian(){
   });
 }
 
-// tambah data
 function tambah(){
   var jenis = document.getElementById("jenis").value;
   var kategori = document.getElementById("kategori").value;
@@ -61,7 +73,6 @@ function tambah(){
   document.getElementById("keterangan").value = "";
 }
 
-// hapus
 function hapus(btn){
   var r = btn.parentNode.parentNode;
   r.remove();
@@ -69,15 +80,12 @@ function hapus(btn){
   simpan();
 }
 
-// ambil bulan dari tanggal
 function getBulan(tgl){
   return tgl ? tgl.substring(0,7) : "";
 }
 
-// filter + hitung
 function total(){
   var t = document.getElementById("tabel");
-
   var filterBulan = document.getElementById("filterBulan").value;
 
   var totalMasuk = 0;
@@ -90,7 +98,6 @@ function total(){
     var kategori = t.rows[i].cells[2].innerHTML;
     var jumlah = parseFloat(t.rows[i].cells[4].innerHTML);
 
-    // FILTER BULAN
     if(filterBulan && getBulan(tanggal) !== filterBulan){
       continue;
     }
@@ -122,7 +129,6 @@ function total(){
   tampilGrafikKategori(kategoriKeluar);
 }
 
-// grafik total
 function tampilGrafikTotal(masuk, keluar){
   var ctx = document.getElementById("grafik1").getContext("2d");
 
@@ -132,34 +138,25 @@ function tampilGrafikTotal(masuk, keluar){
     type: "bar",
     data: {
       labels: ["Pemasukan", "Pengeluaran"],
-      datasets: [{
-        data: [masuk, keluar]
-      }]
+      datasets: [{ data: [masuk, keluar] }]
     }
   });
 }
 
-// grafik kategori
 function tampilGrafikKategori(dataKategori){
   var ctx = document.getElementById("grafik2").getContext("2d");
 
   if(chart2){ chart2.destroy(); }
 
-  var labels = Object.keys(dataKategori);
-  var data = Object.values(dataKategori);
-
   chart2 = new Chart(ctx, {
     type: "bar",
     data: {
-      labels: labels,
-      datasets: [{
-        data: data
-      }]
+      labels: Object.keys(dataKategori),
+      datasets: [{ data: Object.values(dataKategori) }]
     }
   });
 }
 
-// simpan
 function simpan(){
   var t = document.getElementById("tabel");
   var data=[];
@@ -175,7 +172,6 @@ function simpan(){
   localStorage.setItem("keuangan", JSON.stringify(data));
 }
 
-// load
 function load(){
   var data = JSON.parse(localStorage.getItem("keuangan")||"[]");
   var t = document.getElementById("tabel");
@@ -191,4 +187,70 @@ function load(){
   total();
 }
 
+window.onload = function(){
+  updateRincian();
+  load();
+}
+
 </script>
+</head>
+
+<body>
+
+<div class="box">
+<h3>Input</h3>
+
+<input type="date" id="tanggal">
+
+<select id="jenis">
+<option>Pemasukan</option>
+<option>Pengeluaran</option>
+</select>
+
+<select id="kategori" onchange="updateRincian()">
+<option>Hiburan</option>
+<option>Upacara</option>
+<option>Bekal Anak</option>
+<option>Lain-lain</option>
+</select>
+
+<select id="rincian"></select>
+
+<input type="text" id="keterangan" placeholder="Keterangan">
+<input type="number" id="jumlah" placeholder="Jumlah">
+
+<button onclick="tambah()">Tambah</button>
+</div>
+
+<div class="box">
+<h3>Filter Bulan</h3>
+<input type="month" id="filterBulan" onchange="total()">
+</div>
+
+<div class="box">
+<h3>Transaksi</h3>
+
+<table id="tabel">
+<tr>
+<th>Tanggal</th><th>Jenis</th><th>Kategori</th><th>Rincian</th><th>Jumlah</th><th>Keterangan</th><th>X</th>
+</tr>
+</table>
+</div>
+
+<div class="box">
+<h3>Total</h3>
+<div id="total"></div>
+</div>
+
+<div class="box">
+<h3>Grafik</h3>
+<canvas id="grafik1"></canvas>
+</div>
+
+<div class="box">
+<h3>Grafik Kategori</h3>
+<canvas id="grafik2"></canvas>
+</div>
+
+</body>
+</html>
