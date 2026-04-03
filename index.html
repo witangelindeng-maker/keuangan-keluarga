@@ -27,10 +27,19 @@ var rincianData = {
   "Lain-lain": ["Bebas"]
 };
 
+// FORMAT RUPIAH
 function formatRupiah(angka){
-  return angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  angka = angka.toString().replace(/\D/g, "");
+  return angka.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
+// INPUT FORMAT OTOMATIS
+function formatInputRupiah(input){
+  var value = input.value.replace(/\D/g, "");
+  input.value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+// UPDATE RINCIAN
 function updateRincian(){
   var kategori = document.getElementById("kategori").value;
   var rincian = document.getElementById("rincian");
@@ -45,11 +54,12 @@ function updateRincian(){
   });
 }
 
+// TAMBAH DATA
 function tambah(){
   var jenis = document.getElementById("jenis").value;
   var kategori = document.getElementById("kategori").value;
   var rincian = document.getElementById("rincian").value;
-  var jumlah = document.getElementById("jumlah").value;
+  var jumlah = document.getElementById("jumlah").value.replace(/\./g, "");
   var keterangan = document.getElementById("keterangan").value;
   var tanggal = document.getElementById("tanggal").value;
 
@@ -62,7 +72,7 @@ function tambah(){
   r.insertCell(1).innerHTML = jenis;
   r.insertCell(2).innerHTML = kategori;
   r.insertCell(3).innerHTML = rincian;
-  r.insertCell(4).innerHTML = jumlah;
+  r.insertCell(4).innerHTML = formatRupiah(jumlah);
   r.insertCell(5).innerHTML = keterangan;
   r.insertCell(6).innerHTML = "<button onclick='hapus(this)'>X</button>";
 
@@ -73,6 +83,7 @@ function tambah(){
   document.getElementById("keterangan").value = "";
 }
 
+// HAPUS
 function hapus(btn){
   var r = btn.parentNode.parentNode;
   r.remove();
@@ -80,10 +91,12 @@ function hapus(btn){
   simpan();
 }
 
+// AMBIL BULAN
 function getBulan(tgl){
   return tgl ? tgl.substring(0,7) : "";
 }
 
+// TOTAL + FILTER
 function total(){
   var t = document.getElementById("tabel");
   var filterBulan = document.getElementById("filterBulan").value;
@@ -96,7 +109,7 @@ function total(){
     var tanggal = t.rows[i].cells[0].innerHTML;
     var jenis = t.rows[i].cells[1].innerHTML;
     var kategori = t.rows[i].cells[2].innerHTML;
-    var jumlah = parseFloat(t.rows[i].cells[4].innerHTML);
+    var jumlah = parseFloat(t.rows[i].cells[4].innerHTML.replace(/\./g, ""));
 
     if(filterBulan && getBulan(tanggal) !== filterBulan){
       continue;
@@ -125,38 +138,32 @@ function total(){
     alert("⚠️ Saldo minus " + formatRupiah(Math.abs(sisa)));
   }
 
-  tampilGrafikTotal(totalMasuk, totalKeluar);
-  tampilGrafikKategori(kategoriKeluar);
+  grafik(totalMasuk, totalKeluar, kategoriKeluar);
 }
 
-function tampilGrafikTotal(masuk, keluar){
-  var ctx = document.getElementById("grafik1").getContext("2d");
-
+// GRAFIK
+function grafik(masuk, keluar, kategoriData){
   if(chart1){ chart1.destroy(); }
+  if(chart2){ chart2.destroy(); }
 
-  chart1 = new Chart(ctx, {
+  chart1 = new Chart(document.getElementById("grafik1"), {
     type: "bar",
     data: {
       labels: ["Pemasukan", "Pengeluaran"],
       datasets: [{ data: [masuk, keluar] }]
     }
   });
-}
 
-function tampilGrafikKategori(dataKategori){
-  var ctx = document.getElementById("grafik2").getContext("2d");
-
-  if(chart2){ chart2.destroy(); }
-
-  chart2 = new Chart(ctx, {
+  chart2 = new Chart(document.getElementById("grafik2"), {
     type: "bar",
     data: {
-      labels: Object.keys(dataKategori),
-      datasets: [{ data: Object.values(dataKategori) }]
+      labels: Object.keys(kategoriData),
+      datasets: [{ data: Object.values(kategoriData) }]
     }
   });
 }
 
+// SIMPAN
 function simpan(){
   var t = document.getElementById("tabel");
   var data=[];
@@ -172,6 +179,7 @@ function simpan(){
   localStorage.setItem("keuangan", JSON.stringify(data));
 }
 
+// LOAD
 function load(){
   var data = JSON.parse(localStorage.getItem("keuangan")||"[]");
   var t = document.getElementById("tabel");
@@ -217,7 +225,7 @@ window.onload = function(){
 <select id="rincian"></select>
 
 <input type="text" id="keterangan" placeholder="Keterangan">
-<input type="number" id="jumlah" placeholder="Jumlah">
+<input type="text" id="jumlah" placeholder="Jumlah" oninput="formatInputRupiah(this)">
 
 <button onclick="tambah()">Tambah</button>
 </div>
