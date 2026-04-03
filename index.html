@@ -18,7 +18,8 @@ th {background:#ddd;}
 
 <script>
 
-var chart;
+var chart1, chart2;
+
 var rincianData = {
   "Hiburan": ["Makan", "Nonton", "Jalan"],
   "Upacara": ["Banten", "Dana Punia", "Persembahyangan"],
@@ -79,54 +80,66 @@ function hapus(btn){
 
 function total(){
   var t = document.getElementById("tabel");
-  var hasil = {};
+
   var totalMasuk = 0;
   var totalKeluar = 0;
+  var kategoriKeluar = {};
 
   for(var i=1;i<t.rows.length;i++){
     var jenis = t.rows[i].cells[0].innerHTML;
     var kategori = t.rows[i].cells[1].innerHTML;
     var jumlah = parseFloat(t.rows[i].cells[3].innerHTML);
 
-    if(!hasil[kategori]){
-      hasil[kategori] = {masuk:0, keluar:0};
-    }
-
     if(jenis=="Pemasukan"){
-      hasil[kategori].masuk += jumlah;
       totalMasuk += jumlah;
     } else {
-      hasil[kategori].keluar += jumlah;
       totalKeluar += jumlah;
+
+      if(!kategoriKeluar[kategori]){
+        kategoriKeluar[kategori] = 0;
+      }
+      kategoriKeluar[kategori] += jumlah;
     }
   }
 
-  var out="";
-  for(var k in hasil){
-    out += "<b>"+k+"</b><br>";
-    out += "Masuk: " + hasil[k].masuk + "<br>";
-    out += "Keluar: " + hasil[k].keluar + "<br><br>";
-  }
+  // tampil total teks
+  document.getElementById("total").innerHTML =
+    "Pemasukan: " + totalMasuk + "<br>Pengeluaran: " + totalKeluar;
 
-  document.getElementById("total").innerHTML = out;
+  // grafik total
+  tampilGrafikTotal(totalMasuk, totalKeluar);
 
-  tampilGrafik(totalMasuk, totalKeluar);
+  // grafik kategori
+  tampilGrafikKategori(kategoriKeluar);
 }
 
-function tampilGrafik(masuk, keluar){
-  var ctx = document.getElementById("grafik").getContext("2d");
+function tampilGrafikTotal(masuk, keluar){
+  var ctx = document.getElementById("grafik1").getContext("2d");
 
-  if(chart){
-    chart.destroy();
-  }
+  if(chart1){ chart1.destroy(); }
 
-  chart = new Chart(ctx, {
+  chart1 = new Chart(ctx, {
     type: "pie",
     data: {
       labels: ["Pemasukan", "Pengeluaran"],
-      datasets: [{
-        data: [masuk, keluar]
-      }]
+      datasets: [{ data: [masuk, keluar] }]
+    }
+  });
+}
+
+function tampilGrafikKategori(dataKategori){
+  var ctx = document.getElementById("grafik2").getContext("2d");
+
+  if(chart2){ chart2.destroy(); }
+
+  var labels = Object.keys(dataKategori);
+  var data = Object.values(dataKategori);
+
+  chart2 = new Chart(ctx, {
+    type: "pie",
+    data: {
+      labels: labels,
+      datasets: [{ data: data }]
     }
   });
 }
@@ -190,11 +203,6 @@ function load(){
 </div>
 
 <div class="box">
-<h3>Grafik</h3>
-<canvas id="grafik"></canvas>
-</div>
-
-<div class="box">
 <h3>Transaksi</h3>
 
 <table id="tabel">
@@ -205,8 +213,19 @@ function load(){
 </div>
 
 <div class="box">
-<h3>Total per Kategori</h3>
+<h3>Total</h3>
 <div id="total"></div>
+</div>
+
+<!-- GRAFIK DI PALING BAWAH -->
+<div class="box">
+<h3>Grafik Pemasukan vs Pengeluaran</h3>
+<canvas id="grafik1"></canvas>
+</div>
+
+<div class="box">
+<h3>Grafik Pengeluaran per Kategori</h3>
+<canvas id="grafik2"></canvas>
 </div>
 
 </body>
