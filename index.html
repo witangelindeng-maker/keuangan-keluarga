@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4CAF50">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Keuangan Keluarga</title>
 
@@ -259,6 +261,10 @@ window.onload = function(){
 <h3>Grafik Kategori</h3>
 <canvas id="grafik2"></canvas>
 </div>
-
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js");
+}
+</script>
 </body>
 </html>
