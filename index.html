@@ -18,21 +18,26 @@ canvas {max-height:200px;}
 </style>
 
 <script>
+
 var data = JSON.parse(localStorage.getItem("keuangan")||"[]");
 var chart1, chart2;
 
+// format 1000000 → 1.000.000
 function formatAngka(x){
   if(!x) return "";
   return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g,".");
 }
 
+// ubah "1.000.000" → 1000000
 function parseAngka(x){
-  return parseFloat(x.replace(/\./g,"")) || 0;
+  if(!x) return 0;
+  return parseFloat(x.toString().replace(/\./g,"")) || 0;
 }
 
 // AUTO FORMAT INPUT
 document.addEventListener("DOMContentLoaded", function(){
   var input = document.getElementById("jumlah");
+
   input.addEventListener("input", function(){
     var angka = this.value.replace(/\D/g,"");
     this.value = formatAngka(angka);
@@ -90,12 +95,15 @@ function load(){
     r.insertCell(5).innerHTML=x[5];
     r.insertCell(6).innerHTML="<button onclick='hapus("+i+")'>X</button>";
 
+    // 🔥 FIX UTAMA ADA DI SINI
+    var nilai = parseAngka(x[4]);
+
     if(x[1]=="Pemasukan"){
-      masuk += x[4];
+      masuk += nilai;
     } else {
-      keluar += x[4];
+      keluar += nilai;
       if(!kategori[x[2]]) kategori[x[2]]=0;
-      kategori[x[2]] += x[4];
+      kategori[x[2]] += nilai;
     }
   });
 
@@ -135,6 +143,7 @@ function tampilChart(masuk, keluar, kategori){
     options:{responsive:true, maintainAspectRatio:false}
   });
 }
+
 </script>
 </head>
 
