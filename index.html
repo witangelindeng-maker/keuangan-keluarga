@@ -1,20 +1,4 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Keuangan Keluarga</title>
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<style>
-body {font-family: Arial; background:#eef2f7; padding:10px;}
-.box {background:white; padding:15px; border-radius:10px; margin-bottom:15px;}
-input, select, button {width:100%; padding:10px; margin-top:10px;}
-button {background:#4CAF50; color:white; border:none;}
-table {width:100%; border-collapse:collapse; font-size:12px;}
-th,td {border:1px solid #ccc; padding:5px; text-align:center;}
-th {background:#ddd;}
-</style>
 
 <script>
 
@@ -26,6 +10,11 @@ var rincianData = {
   "Bekal Anak": ["Jajan", "Alat Tulis", "Transport"],
   "Lain-lain": ["Bebas"]
 };
+
+// format angka pakai titik
+function formatRupiah(angka){
+  return angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
 
 function updateRincian(){
   var kategori = document.getElementById("kategori").value;
@@ -51,18 +40,20 @@ function tambah(){
   var rincian = document.getElementById("rincian").value;
   var jumlah = document.getElementById("jumlah").value;
   var keterangan = document.getElementById("keterangan").value;
+  var tanggal = document.getElementById("tanggal").value;
 
   if(jumlah==""){ alert("Isi jumlah!"); return;}
 
   var t = document.getElementById("tabel");
   var r = t.insertRow();
 
-  r.insertCell(0).innerHTML = jenis;
-  r.insertCell(1).innerHTML = kategori;
-  r.insertCell(2).innerHTML = rincian;
-  r.insertCell(3).innerHTML = jumlah;
-  r.insertCell(4).innerHTML = keterangan;
-  r.insertCell(5).innerHTML = "<button onclick='hapus(this)'>X</button>";
+  r.insertCell(0).innerHTML = tanggal;
+  r.insertCell(1).innerHTML = jenis;
+  r.insertCell(2).innerHTML = kategori;
+  r.insertCell(3).innerHTML = rincian;
+  r.insertCell(4).innerHTML = jumlah;
+  r.insertCell(5).innerHTML = keterangan;
+  r.insertCell(6).innerHTML = "<button onclick='hapus(this)'>X</button>";
 
   total();
   simpan();
@@ -86,9 +77,9 @@ function total(){
   var kategoriKeluar = {};
 
   for(var i=1;i<t.rows.length;i++){
-    var jenis = t.rows[i].cells[0].innerHTML;
-    var kategori = t.rows[i].cells[1].innerHTML;
-    var jumlah = parseFloat(t.rows[i].cells[3].innerHTML);
+    var jenis = t.rows[i].cells[1].innerHTML;
+    var kategori = t.rows[i].cells[2].innerHTML;
+    var jumlah = parseFloat(t.rows[i].cells[4].innerHTML);
 
     if(jenis=="Pemasukan"){
       totalMasuk += jumlah;
@@ -102,14 +93,19 @@ function total(){
     }
   }
 
-  // tampil total teks
+  var sisa = totalMasuk - totalKeluar;
+
   document.getElementById("total").innerHTML =
-    "Pemasukan: " + totalMasuk + "<br>Pengeluaran: " + totalKeluar;
+    "Pemasukan: " + formatRupiah(totalMasuk) + "<br>" +
+    "Pengeluaran: " + formatRupiah(totalKeluar) + "<br>" +
+    "Saldo: " + formatRupiah(sisa);
 
-  // grafik total
+  // ⚠️ peringatan saldo minus
+  if(sisa < 0){
+    alert("Saldo Anda minus " + formatRupiah(Math.abs(sisa)));
+  }
+
   tampilGrafikTotal(totalMasuk, totalKeluar);
-
-  // grafik kategori
   tampilGrafikKategori(kategoriKeluar);
 }
 
@@ -119,10 +115,12 @@ function tampilGrafikTotal(masuk, keluar){
   if(chart1){ chart1.destroy(); }
 
   chart1 = new Chart(ctx, {
-    type: "pie",
+    type: "bar",
     data: {
       labels: ["Pemasukan", "Pengeluaran"],
-      datasets: [{ data: [masuk, keluar] }]
+      datasets: [{
+        data: [masuk, keluar]
+      }]
     }
   });
 }
@@ -136,10 +134,12 @@ function tampilGrafikKategori(dataKategori){
   var data = Object.values(dataKategori);
 
   chart2 = new Chart(ctx, {
-    type: "pie",
+    type: "bar",
     data: {
       labels: labels,
-      datasets: [{ data: data }]
+      datasets: [{
+        data: data
+      }]
     }
   });
 }
@@ -150,7 +150,7 @@ function simpan(){
 
   for(var i=1;i<t.rows.length;i++){
     var row=[];
-    for(var j=0;j<5;j++){
+    for(var j=0;j<6;j++){
       row.push(t.rows[i].cells[j].innerHTML);
     }
     data.push(row);
@@ -165,68 +165,13 @@ function load(){
 
   data.forEach(function(item){
     var r = t.insertRow();
-    for(var i=0;i<5;i++){
+    for(var i=0;i<6;i++){
       r.insertCell(i).innerHTML=item[i];
     }
-    r.insertCell(5).innerHTML="<button onclick='hapus(this)'>X</button>";
+    r.insertCell(6).innerHTML="<button onclick='hapus(this)'>X</button>";
   });
 
   total();
 }
 
 </script>
-</head>
-
-<body onload="updateRincian(); load();">
-
-<div class="box">
-<h3>Input</h3>
-
-<select id="jenis">
-<option>Pemasukan</option>
-<option>Pengeluaran</option>
-</select>
-
-<select id="kategori" onchange="updateRincian()">
-<option>Hiburan</option>
-<option>Upacara</option>
-<option>Bekal Anak</option>
-<option>Lain-lain</option>
-</select>
-
-<select id="rincian"></select>
-
-<input type="text" id="keterangan" placeholder="Keterangan">
-<input type="number" id="jumlah" placeholder="Jumlah">
-
-<button onclick="tambah()">Tambah</button>
-</div>
-
-<div class="box">
-<h3>Transaksi</h3>
-
-<table id="tabel">
-<tr>
-<th>Jenis</th><th>Kategori</th><th>Rincian</th><th>Jumlah</th><th>Keterangan</th><th>X</th>
-</tr>
-</table>
-</div>
-
-<div class="box">
-<h3>Total</h3>
-<div id="total"></div>
-</div>
-
-<!-- GRAFIK DI PALING BAWAH -->
-<div class="box">
-<h3>Grafik Pemasukan vs Pengeluaran</h3>
-<canvas id="grafik1"></canvas>
-</div>
-
-<div class="box">
-<h3>Grafik Pengeluaran per Kategori</h3>
-<canvas id="grafik2"></canvas>
-</div>
-
-</body>
-</html>
