@@ -14,10 +14,7 @@ button {background:#4CAF50; color:white; border:none;}
 table {width:100%; border-collapse:collapse; font-size:12px;}
 th,td {border:1px solid #ccc; padding:5px; text-align:center;}
 th {background:#ddd;}
-
-canvas {
-  max-height: 200px;
-}
+canvas {max-height:200px;}
 </style>
 
 <script>
@@ -31,7 +28,6 @@ var rincianData = {
   "Lain-lain": ["Bebas"]
 };
 
-// FORMAT ANGKA 200.000
 function formatAngka(angka){
   return angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
@@ -57,17 +53,22 @@ function tambah(){
   var jumlah = document.getElementById("jumlah").value;
   var keterangan = document.getElementById("keterangan").value;
 
+  // tanggal
+  var tanggal = document.getElementById("tanggal").value;
+
   if(jumlah==""){ alert("Isi jumlah!"); return;}
+  if(tanggal==""){ alert("Isi tanggal!"); return;}
 
   var t = document.getElementById("tabel");
   var r = t.insertRow();
 
-  r.insertCell(0).innerHTML = jenis;
-  r.insertCell(1).innerHTML = kategori;
-  r.insertCell(2).innerHTML = rincian;
-  r.insertCell(3).innerHTML = jumlah;
-  r.insertCell(4).innerHTML = keterangan;
-  r.insertCell(5).innerHTML = "<button onclick='hapus(this)'>X</button>";
+  r.insertCell(0).innerHTML = tanggal;
+  r.insertCell(1).innerHTML = jenis;
+  r.insertCell(2).innerHTML = kategori;
+  r.insertCell(3).innerHTML = rincian;
+  r.insertCell(4).innerHTML = jumlah;
+  r.insertCell(5).innerHTML = keterangan;
+  r.insertCell(6).innerHTML = "<button onclick='hapus(this)'>X</button>";
 
   total();
   simpan();
@@ -91,11 +92,11 @@ function total(){
   var kategoriKeluar = {};
 
   for(var i=1;i<t.rows.length;i++){
-    var jenis = t.rows[i].cells[0].innerHTML;
-    var kategori = t.rows[i].cells[1].innerHTML;
-    var jumlah = parseFloat(t.rows[i].cells[3].innerHTML);
+    var jenis = t.rows[i].cells[1].innerHTML;
+    var kategori = t.rows[i].cells[2].innerHTML;
+    var jumlah = parseFloat(t.rows[i].cells[4].innerHTML);
 
-    if(jenis=="Pemasukan" || jenis=="Gaji Bulanan"){
+    if(jenis=="Pemasukan"){
       totalMasuk += jumlah;
     } else {
       totalKeluar += jumlah;
@@ -117,7 +118,6 @@ function total(){
   cekPeringatan(totalMasuk, totalKeluar);
 }
 
-// PERINGATAN SALDO
 function cekPeringatan(masuk, keluar){
   var saldo = masuk - keluar;
   var el = document.getElementById("peringatan");
@@ -131,7 +131,6 @@ function cekPeringatan(masuk, keluar){
   }
 }
 
-// GRAFIK TOTAL
 function tampilGrafikTotal(masuk, keluar){
   var ctx = document.getElementById("grafik1").getContext("2d");
 
@@ -141,51 +140,34 @@ function tampilGrafikTotal(masuk, keluar){
     type: "bar",
     data: {
       labels: ["Pemasukan", "Pengeluaran"],
-      datasets: [{
-        label: "Jumlah",
-        data: [masuk, keluar]
-      }]
+      datasets: [{ label: "Jumlah", data: [masuk, keluar] }]
     },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false
-    }
+    options: { responsive: true, maintainAspectRatio: false }
   });
 }
 
-// GRAFIK KATEGORI
 function tampilGrafikKategori(dataKategori){
   var ctx = document.getElementById("grafik2").getContext("2d");
 
   if(chart2){ chart2.destroy(); }
 
-  var labels = Object.keys(dataKategori);
-  var data = Object.values(dataKategori);
-
   chart2 = new Chart(ctx, {
     type: "bar",
     data: {
-      labels: labels,
-      datasets: [{
-        label: "Pengeluaran",
-        data: data
-      }]
+      labels: Object.keys(dataKategori),
+      datasets: [{ label: "Pengeluaran", data: Object.values(dataKategori) }]
     },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false
-    }
+    options: { responsive: true, maintainAspectRatio: false }
   });
 }
 
-// SIMPAN DATA
 function simpan(){
   var t = document.getElementById("tabel");
   var data=[];
 
   for(var i=1;i<t.rows.length;i++){
     var row=[];
-    for(var j=0;j<5;j++){
+    for(var j=0;j<6;j++){
       row.push(t.rows[i].cells[j].innerHTML);
     }
     data.push(row);
@@ -194,17 +176,16 @@ function simpan(){
   localStorage.setItem("keuangan", JSON.stringify(data));
 }
 
-// LOAD DATA
 function load(){
   var data = JSON.parse(localStorage.getItem("keuangan")||"[]");
   var t = document.getElementById("tabel");
 
   data.forEach(function(item){
     var r = t.insertRow();
-    for(var i=0;i<5;i++){
+    for(var i=0;i<6;i++){
       r.insertCell(i).innerHTML=item[i];
     }
-    r.insertCell(5).innerHTML="<button onclick='hapus(this)'>X</button>";
+    r.insertCell(6).innerHTML="<button onclick='hapus(this)'>X</button>";
   });
 
   total();
@@ -218,9 +199,11 @@ function load(){
 <div class="box">
 <h3>Input</h3>
 
+<!-- TAMBAH TANGGAL -->
+<input type="date" id="tanggal">
+
 <select id="jenis">
 <option>Pemasukan</option>
-<option>Gaji Bulanan</option>
 <option>Pengeluaran</option>
 </select>
 
@@ -244,7 +227,13 @@ function load(){
 
 <table id="tabel">
 <tr>
-<th>Jenis</th><th>Kategori</th><th>Rincian</th><th>Jumlah</th><th>Keterangan</th><th>X</th>
+<th>Tanggal</th>
+<th>Jenis</th>
+<th>Kategori</th>
+<th>Rincian</th>
+<th>Jumlah</th>
+<th>Keterangan</th>
+<th>X</th>
 </tr>
 </table>
 </div>
@@ -256,12 +245,8 @@ function load(){
 </div>
 
 <div class="box">
-<h3>Grafik Pemasukan vs Pengeluaran</h3>
+<h3>Grafik</h3>
 <canvas id="grafik1"></canvas>
-</div>
-
-<div class="box">
-<h3>Grafik Pengeluaran per Kategori</h3>
 <canvas id="grafik2"></canvas>
 </div>
 
