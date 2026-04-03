@@ -4,6 +4,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Keuangan Keluarga</title>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
 body {font-family: Arial; background:#eef2f7; padding:10px;}
 .box {background:white; padding:15px; border-radius:10px; margin-bottom:15px;}
@@ -16,16 +18,18 @@ th {background:#ddd;}
 
 <script>
 
+var chart;
 var rincianData = {
   "Hiburan": ["Makan", "Nonton", "Jalan"],
   "Upacara": ["Banten", "Dana Punia", "Persembahyangan"],
   "Bekal Anak": ["Jajan", "Alat Tulis", "Transport"],
-  "Lain-lain": ["Tak terduga"]
+  "Lain-lain": ["Bebas"]
 };
 
 function updateRincian(){
   var kategori = document.getElementById("kategori").value;
   var rincian = document.getElementById("rincian");
+
   rincian.innerHTML = "";
 
   rincianData[kategori].forEach(function(item){
@@ -34,6 +38,10 @@ function updateRincian(){
     opt.text = item;
     rincian.appendChild(opt);
   });
+
+  if(kategori === "Lain-lain"){
+    document.getElementById("keterangan").focus();
+  }
 }
 
 function tambah(){
@@ -41,6 +49,7 @@ function tambah(){
   var kategori = document.getElementById("kategori").value;
   var rincian = document.getElementById("rincian").value;
   var jumlah = document.getElementById("jumlah").value;
+  var keterangan = document.getElementById("keterangan").value;
 
   if(jumlah==""){ alert("Isi jumlah!"); return;}
 
@@ -51,10 +60,14 @@ function tambah(){
   r.insertCell(1).innerHTML = kategori;
   r.insertCell(2).innerHTML = rincian;
   r.insertCell(3).innerHTML = jumlah;
-  r.insertCell(4).innerHTML = "<button onclick='hapus(this)'>X</button>";
+  r.insertCell(4).innerHTML = keterangan;
+  r.insertCell(5).innerHTML = "<button onclick='hapus(this)'>X</button>";
 
   total();
   simpan();
+
+  document.getElementById("jumlah").value = "";
+  document.getElementById("keterangan").value = "";
 }
 
 function hapus(btn){
@@ -67,6 +80,8 @@ function hapus(btn){
 function total(){
   var t = document.getElementById("tabel");
   var hasil = {};
+  var totalMasuk = 0;
+  var totalKeluar = 0;
 
   for(var i=1;i<t.rows.length;i++){
     var jenis = t.rows[i].cells[0].innerHTML;
@@ -79,19 +94,41 @@ function total(){
 
     if(jenis=="Pemasukan"){
       hasil[kategori].masuk += jumlah;
+      totalMasuk += jumlah;
     } else {
       hasil[kategori].keluar += jumlah;
+      totalKeluar += jumlah;
     }
   }
 
   var out="";
   for(var k in hasil){
-    out += k + "<br>";
+    out += "<b>"+k+"</b><br>";
     out += "Masuk: " + hasil[k].masuk + "<br>";
     out += "Keluar: " + hasil[k].keluar + "<br><br>";
   }
 
   document.getElementById("total").innerHTML = out;
+
+  tampilGrafik(totalMasuk, totalKeluar);
+}
+
+function tampilGrafik(masuk, keluar){
+  var ctx = document.getElementById("grafik").getContext("2d");
+
+  if(chart){
+    chart.destroy();
+  }
+
+  chart = new Chart(ctx, {
+    type: "pie",
+    data: {
+      labels: ["Pemasukan", "Pengeluaran"],
+      datasets: [{
+        data: [masuk, keluar]
+      }]
+    }
+  });
 }
 
 function simpan(){
@@ -100,7 +137,7 @@ function simpan(){
 
   for(var i=1;i<t.rows.length;i++){
     var row=[];
-    for(var j=0;j<4;j++){
+    for(var j=0;j<5;j++){
       row.push(t.rows[i].cells[j].innerHTML);
     }
     data.push(row);
@@ -115,10 +152,10 @@ function load(){
 
   data.forEach(function(item){
     var r = t.insertRow();
-    for(var i=0;i<4;i++){
+    for(var i=0;i<5;i++){
       r.insertCell(i).innerHTML=item[i];
     }
-    r.insertCell(4).innerHTML="<button onclick='hapus(this)'>X</button>";
+    r.insertCell(5).innerHTML="<button onclick='hapus(this)'>X</button>";
   });
 
   total();
@@ -146,9 +183,15 @@ function load(){
 
 <select id="rincian"></select>
 
+<input type="text" id="keterangan" placeholder="Keterangan">
 <input type="number" id="jumlah" placeholder="Jumlah">
 
 <button onclick="tambah()">Tambah</button>
+</div>
+
+<div class="box">
+<h3>Grafik</h3>
+<canvas id="grafik"></canvas>
 </div>
 
 <div class="box">
@@ -156,7 +199,7 @@ function load(){
 
 <table id="tabel">
 <tr>
-<th>Jenis</th><th>Kategori</th><th>Rincian</th><th>Jumlah</th><th>X</th>
+<th>Jenis</th><th>Kategori</th><th>Rincian</th><th>Jumlah</th><th>Keterangan</th><th>X</th>
 </tr>
 </table>
 </div>
