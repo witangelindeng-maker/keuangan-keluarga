@@ -1,1 +1,170 @@
-<h1>Aplikasi Keuangan</h1>
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keuangan Keluarga</title>
+
+<style>
+body {font-family: Arial; background:#eef2f7; padding:10px;}
+.box {background:white; padding:15px; border-radius:10px; margin-bottom:15px;}
+input, select, button {width:100%; padding:10px; margin-top:10px;}
+button {background:#4CAF50; color:white; border:none;}
+table {width:100%; border-collapse:collapse; font-size:12px;}
+th,td {border:1px solid #ccc; padding:5px; text-align:center;}
+th {background:#ddd;}
+</style>
+
+<script>
+
+var rincianData = {
+  "Hiburan": ["Makan", "Nonton", "Jalan"],
+  "Upacara": ["Banten", "Dana Punia", "Persembahyangan"],
+  "Bekal Anak": ["Jajan", "Alat Tulis", "Transport"],
+  "Lain-lain": ["Tak terduga"]
+};
+
+function updateRincian(){
+  var kategori = document.getElementById("kategori").value;
+  var rincian = document.getElementById("rincian");
+  rincian.innerHTML = "";
+
+  rincianData[kategori].forEach(function(item){
+    var opt = document.createElement("option");
+    opt.value = item;
+    opt.text = item;
+    rincian.appendChild(opt);
+  });
+}
+
+function tambah(){
+  var jenis = document.getElementById("jenis").value;
+  var kategori = document.getElementById("kategori").value;
+  var rincian = document.getElementById("rincian").value;
+  var jumlah = document.getElementById("jumlah").value;
+
+  if(jumlah==""){ alert("Isi jumlah!"); return;}
+
+  var t = document.getElementById("tabel");
+  var r = t.insertRow();
+
+  r.insertCell(0).innerHTML = jenis;
+  r.insertCell(1).innerHTML = kategori;
+  r.insertCell(2).innerHTML = rincian;
+  r.insertCell(3).innerHTML = jumlah;
+  r.insertCell(4).innerHTML = "<button onclick='hapus(this)'>X</button>";
+
+  total();
+  simpan();
+}
+
+function hapus(btn){
+  var r = btn.parentNode.parentNode;
+  r.remove();
+  total();
+  simpan();
+}
+
+function total(){
+  var t = document.getElementById("tabel");
+  var hasil = {};
+
+  for(var i=1;i<t.rows.length;i++){
+    var jenis = t.rows[i].cells[0].innerHTML;
+    var kategori = t.rows[i].cells[1].innerHTML;
+    var jumlah = parseFloat(t.rows[i].cells[3].innerHTML);
+
+    if(!hasil[kategori]){
+      hasil[kategori] = {masuk:0, keluar:0};
+    }
+
+    if(jenis=="Pemasukan"){
+      hasil[kategori].masuk += jumlah;
+    } else {
+      hasil[kategori].keluar += jumlah;
+    }
+  }
+
+  var out="";
+  for(var k in hasil){
+    out += k + "<br>";
+    out += "Masuk: " + hasil[k].masuk + "<br>";
+    out += "Keluar: " + hasil[k].keluar + "<br><br>";
+  }
+
+  document.getElementById("total").innerHTML = out;
+}
+
+function simpan(){
+  var t = document.getElementById("tabel");
+  var data=[];
+
+  for(var i=1;i<t.rows.length;i++){
+    var row=[];
+    for(var j=0;j<4;j++){
+      row.push(t.rows[i].cells[j].innerHTML);
+    }
+    data.push(row);
+  }
+
+  localStorage.setItem("keuangan", JSON.stringify(data));
+}
+
+function load(){
+  var data = JSON.parse(localStorage.getItem("keuangan")||"[]");
+  var t = document.getElementById("tabel");
+
+  data.forEach(function(item){
+    var r = t.insertRow();
+    for(var i=0;i<4;i++){
+      r.insertCell(i).innerHTML=item[i];
+    }
+    r.insertCell(4).innerHTML="<button onclick='hapus(this)'>X</button>";
+  });
+
+  total();
+}
+
+</script>
+</head>
+
+<body onload="updateRincian(); load();">
+
+<div class="box">
+<h3>Input</h3>
+
+<select id="jenis">
+<option>Pemasukan</option>
+<option>Pengeluaran</option>
+</select>
+
+<select id="kategori" onchange="updateRincian()">
+<option>Hiburan</option>
+<option>Upacara</option>
+<option>Bekal Anak</option>
+<option>Lain-lain</option>
+</select>
+
+<select id="rincian"></select>
+
+<input type="number" id="jumlah" placeholder="Jumlah">
+
+<button onclick="tambah()">Tambah</button>
+</div>
+
+<div class="box">
+<h3>Transaksi</h3>
+
+<table id="tabel">
+<tr>
+<th>Jenis</th><th>Kategori</th><th>Rincian</th><th>Jumlah</th><th>X</th>
+</tr>
+</table>
+</div>
+
+<div class="box">
+<h3>Total per Kategori</h3>
+<div id="total"></div>
+</div>
+
+</body>
+</html>
