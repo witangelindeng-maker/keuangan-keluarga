@@ -15,7 +15,6 @@ table {width:100%; border-collapse:collapse; font-size:12px;}
 th,td {border:1px solid #ccc; padding:5px; text-align:center;}
 th {background:#ddd;}
 
-/* BIAR CHART LEBIH KECIL */
 canvas {
   max-height: 200px;
 }
@@ -44,10 +43,6 @@ function updateRincian(){
     opt.text = item;
     rincian.appendChild(opt);
   });
-
-  if(kategori === "Lain-lain"){
-    document.getElementById("keterangan").focus();
-  }
 }
 
 function tambah(){
@@ -112,6 +107,21 @@ function total(){
 
   tampilGrafikTotal(totalMasuk, totalKeluar);
   tampilGrafikKategori(kategoriKeluar);
+
+  cekPeringatan(totalMasuk, totalKeluar);
+}
+
+function cekPeringatan(masuk, keluar){
+  var saldo = masuk - keluar;
+  var el = document.getElementById("peringatan");
+
+  if(saldo < 0){
+    el.style.color = "red";
+    el.innerHTML = "⚠️ Anggaran minus Rp " + Math.abs(saldo);
+  } else {
+    el.style.color = "green";
+    el.innerHTML = "✅ Sisa saldo: Rp " + saldo;
+  }
 }
 
 function tampilGrafikTotal(masuk, keluar){
@@ -230,9 +240,10 @@ function load(){
 <div class="box">
 <h3>Total</h3>
 <div id="total"></div>
+
+<div id="peringatan" style="margin-top:10px; font-weight:bold;"></div>
 </div>
 
-<!-- CHART DI BAWAH -->
 <div class="box">
 <h3>Grafik Pemasukan vs Pengeluaran</h3>
 <canvas id="grafik1"></canvas>
