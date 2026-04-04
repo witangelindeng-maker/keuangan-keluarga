@@ -133,10 +133,19 @@ function total(){
 
   var sisa = totalMasuk - totalKeluar;
 
-  document.getElementById("total").innerHTML =
-    "Pemasukan: " + formatRupiah(totalMasuk) + "<br>" +
-    "Pengeluaran: " + formatRupiah(totalKeluar) + "<br>" +
-    "Saldo: " + formatRupiah(sisa);
+var saldoText = formatRupiah(Math.abs(sisa));
+var warna = "black";
+
+// kalau minus
+if (sisa < 0) {
+  saldoText = "-" + saldoText;
+  warna = "red";
+}
+
+document.getElementById("total").innerHTML =
+  "Pemasukan: " + formatRupiah(totalMasuk) + "<br>" +
+  "Pengeluaran: " + formatRupiah(totalKeluar) + "<br>" +
+  "<span style='color:" + warna + "'>Saldo: " + saldoText + "</span>";
 
   if(sisa < 0){
     alert("⚠️ Saldo minus " + formatRupiah(Math.abs(sisa)));
