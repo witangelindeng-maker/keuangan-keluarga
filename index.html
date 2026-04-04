@@ -135,17 +135,19 @@ function total(){
 
 var saldoText = formatRupiah(Math.abs(sisa));
 var warna = "black";
+var bg = "transparent";
 
 // kalau minus
 if (sisa < 0) {
   saldoText = "-" + saldoText;
-  warna = "red";
+  warna = "white";
+  bg = "#e74c3c"; // merah
 }
 
 document.getElementById("total").innerHTML =
   "Pemasukan: " + formatRupiah(totalMasuk) + "<br>" +
   "Pengeluaran: " + formatRupiah(totalKeluar) + "<br>" +
-  "<span style='color:" + warna + "'>Saldo: " + saldoText + "</span>";
+  "<div style='margin-top:10px; padding:10px; border-radius:8px; background:" + bg + "; color:" + warna + "; font-weight:bold;'>Saldo: " + saldoText + "</div>";
 
   if(sisa < 0){
     alert("⚠️ Saldo minus " + formatRupiah(Math.abs(sisa)));
